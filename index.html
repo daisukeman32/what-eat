@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <title>What Eat?</title>
+    <meta property="og:title" content="What Eat? - 深層心理食べ物診断">
+    <meta property="og:description" content="6つの図形を選ぶだけ。あなたが本当に食べたいものを診断。">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- テーマトグル -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="テーマ切替"></button>
+
+    <div class="container">
+        <!-- スタート画面 -->
+        <div id="start-screen" class="screen active">
+            <h1 class="title">What Eat?</h1>
+            <p class="subtitle">6つの図形を選ぶだけ</p>
+            <button id="start-btn" class="btn">START</button>
+        </div>
+
+        <!-- 質問画面 -->
+        <div id="question-screen" class="screen">
+            <div class="progress">
+                <span id="progress-text">1 / 6</span>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+            </div>
+            
+            <p id="question-hint" class="question-hint"></p>
+            
+            <div id="options" class="options"></div>
+            
+            <button id="back-btn" class="btn-back">←</button>
+        </div>
+
+        <!-- 分析中画面 -->
+        <div id="analyzing-screen" class="screen">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- 結果画面 -->
+        <div id="result-screen" class="screen">
+            <p class="result-label">今日あなたが食べたいのは</p>
+
+            <h2 id="result-food" class="result-food"></h2>
+
+            <canvas id="radar-chart" width="200" height="200"></canvas>
+
+            <div class="share-buttons">
+                <button id="share-x" class="btn-share">𝕏</button>
+                <button id="share-line" class="btn-share">LINE</button>
+                <button id="copy-result" class="btn-share">Copy</button>
+            </div>
+
+            <button id="retry-btn" class="btn">RETRY</button>
+
+            <p class="disclaimer">※この診断はジョークです。結果は架空のアルゴリズムに基づくもので、科学的根拠はありません。</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
