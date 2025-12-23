@@ -21,547 +21,398 @@ setTheme(isDark);
 themeToggle.addEventListener('click', () => setTheme(!isDark));
 
 // ============================================
-// 質問データ（図形ベース）
+// 音声管理
+// ============================================
+
+const bgm = document.getElementById('bgm');
+const sfxSelect = document.getElementById('sfx-select');
+const sfxResult = document.getElementById('sfx-result');
+const muteBtn = document.getElementById('mute-toggle');
+
+let isMuted = localStorage.getItem('muted') === 'true';
+let audioStarted = false;
+
+// BGM音量設定
+bgm.volume = 0.3;
+sfxSelect.volume = 0.5;
+sfxResult.volume = 0.6;
+
+function updateMuteUI() {
+    if (isMuted) {
+        muteBtn.classList.add('muted');
+        bgm.pause();
+    } else {
+        muteBtn.classList.remove('muted');
+        if (audioStarted) {
+            bgm.play().catch(() => {});
+        }
+    }
+}
+
+function toggleMute() {
+    isMuted = !isMuted;
+    localStorage.setItem('muted', isMuted);
+    updateMuteUI();
+}
+
+function startAudio() {
+    if (audioStarted) return;
+    audioStarted = true;
+    if (!isMuted) {
+        bgm.play().catch(() => {});
+    }
+}
+
+function playSelect() {
+    if (isMuted) return;
+    sfxSelect.currentTime = 0;
+    sfxSelect.play().catch(() => {});
+}
+
+function playResult() {
+    if (isMuted) return;
+    sfxResult.currentTime = 0;
+    sfxResult.play().catch(() => {});
+}
+
+updateMuteUI();
+muteBtn.addEventListener('click', toggleMute);
+
+// ============================================
+// 質問データ（図形心理学ベース）
+// 5軸: satiety(満腹), warmth(温度), stimulation(刺激), comfort(安心), social(社交)
 // ============================================
 
 const questions = [
+    // Q1: 基本図形 - 形の丸み・鋭さで欲求を測定
     {
         hint: "直感で選んで",
         options: [
-            { 
+            {
+                // 円: 丸み=安心・満足・包容
                 svg: `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="25" stroke-width="2"/></svg>`,
-                scores: { energy: 0, fresh: -1, warm: 1, social: 1, comfort: 2, spicy: -1, rich: 1 }
+                scores: { satiety: 1, warmth: 1, stimulation: -2, comfort: 3, social: 1 }
             },
-            { 
+            {
+                // 三角: 鋭さ=刺激・エネルギー・挑戦
                 svg: `<svg viewBox="0 0 60 60"><polygon points="30,5 55,55 5,55" stroke-width="2"/></svg>`,
-                scores: { energy: 1, fresh: 1, warm: -1, social: 0, comfort: -1, spicy: 2, rich: -1 }
+                scores: { satiety: -1, warmth: -1, stimulation: 3, comfort: -2, social: 0 }
             },
-            { 
+            {
+                // 四角: 安定=伝統・バランス・秩序
                 svg: `<svg viewBox="0 0 60 60"><rect x="8" y="8" width="44" height="44" stroke-width="2"/></svg>`,
-                scores: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 0 }
+                scores: { satiety: 1, warmth: 1, stimulation: -1, comfort: 2, social: 0 }
             },
-            { 
+            {
+                // 波線: 流動=軽やか・自由・フレッシュ
                 svg: `<svg viewBox="0 0 60 60"><path d="M5,30 Q20,10 30,30 T55,30" stroke-width="2"/></svg>`,
-                scores: { energy: 1, fresh: 2, warm: -1, social: 0, comfort: 0, spicy: 0, rich: -1 }
+                scores: { satiety: -2, warmth: -1, stimulation: 1, comfort: 0, social: 0 }
             }
         ]
     },
+    // Q2: パターン - 線の方向と配置で状態を測定
     {
         hint: "直感で選んで",
         options: [
-            { 
+            {
+                // 縦線: 上昇・活力・独立
                 svg: `<svg viewBox="0 0 60 60"><line x1="15" y1="5" x2="15" y2="55" stroke-width="2"/><line x1="30" y1="5" x2="30" y2="55" stroke-width="2"/><line x1="45" y1="5" x2="45" y2="55" stroke-width="2"/></svg>`,
-                scores: { energy: 1, fresh: 1, warm: -1, social: -1, comfort: 0, spicy: 0, rich: -1 }
+                scores: { satiety: -1, warmth: -1, stimulation: 2, comfort: -1, social: -2 }
             },
-            { 
+            {
+                // 横線: 安定・落ち着き・地に足
                 svg: `<svg viewBox="0 0 60 60"><line x1="5" y1="15" x2="55" y2="15" stroke-width="2"/><line x1="5" y1="30" x2="55" y2="30" stroke-width="2"/><line x1="5" y1="45" x2="55" y2="45" stroke-width="2"/></svg>`,
-                scores: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: -1, rich: 1 }
+                scores: { satiety: 1, warmth: 2, stimulation: -2, comfort: 2, social: 0 }
             },
-            { 
+            {
+                // ドットグリッド: 規則性・社交・共有
                 svg: `<svg viewBox="0 0 60 60"><circle cx="15" cy="15" r="3" class="filled"/><circle cx="30" cy="15" r="3" class="filled"/><circle cx="45" cy="15" r="3" class="filled"/><circle cx="15" cy="30" r="3" class="filled"/><circle cx="30" cy="30" r="3" class="filled"/><circle cx="45" cy="30" r="3" class="filled"/><circle cx="15" cy="45" r="3" class="filled"/><circle cx="30" cy="45" r="3" class="filled"/><circle cx="45" cy="45" r="3" class="filled"/></svg>`,
-                scores: { energy: 0, fresh: 0, warm: 0, social: 1, comfort: 1, spicy: 0, rich: 0 }
+                scores: { satiety: 0, warmth: 0, stimulation: 0, comfort: 1, social: 3 }
             },
-            { 
+            {
+                // 有機的形状: 温もり・包容・満足
                 svg: `<svg viewBox="0 0 60 60"><path d="M30,5 Q55,20 45,35 Q35,50 30,55 Q25,50 15,35 Q5,20 30,5" stroke-width="2"/></svg>`,
-                scores: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 1, rich: 2 }
+                scores: { satiety: 2, warmth: 3, stimulation: 0, comfort: 2, social: 1 }
             }
         ]
     },
+    // Q3: 線の太さ - ボリューム感・重さの欲求
     {
         hint: "直感で選んで",
         options: [
-            { 
-                svg: `<svg viewBox="0 0 60 60"><line x1="10" y1="30" x2="50" y2="30" stroke-width="6"/></svg>`,
-                scores: { energy: -2, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 2 }
+            {
+                // 太い線: 重さ・ボリューム・満足
+                svg: `<svg viewBox="0 0 60 60"><line x1="10" y1="30" x2="50" y2="30" stroke-width="8"/></svg>`,
+                scores: { satiety: 3, warmth: 1, stimulation: -1, comfort: 1, social: 0 }
             },
-            { 
+            {
+                // 細い線: 軽さ・繊細・ヘルシー
                 svg: `<svg viewBox="0 0 60 60"><line x1="10" y1="30" x2="50" y2="30" stroke-width="1"/></svg>`,
-                scores: { energy: 1, fresh: 2, warm: -1, social: 0, comfort: -1, spicy: 0, rich: -2 }
+                scores: { satiety: -3, warmth: -1, stimulation: 0, comfort: 0, social: 0 }
             },
-            { 
-                svg: `<svg viewBox="0 0 60 60"><path d="M10,40 Q25,10 40,40 Q50,55 55,30" stroke-width="2"/></svg>`,
-                scores: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 1, rich: 0 }
+            {
+                // 曲線: 柔らかさ・温かさ・心地よさ
+                svg: `<svg viewBox="0 0 60 60"><path d="M10,40 Q30,10 50,40" stroke-width="2"/></svg>`,
+                scores: { satiety: 0, warmth: 2, stimulation: 0, comfort: 2, social: 1 }
             },
-            { 
+            {
+                // 斜め線: 動き・変化・刺激
                 svg: `<svg viewBox="0 0 60 60"><line x1="10" y1="50" x2="50" y2="10" stroke-width="2"/></svg>`,
-                scores: { energy: 1, fresh: 1, warm: -1, social: 0, comfort: -1, spicy: 1, rich: -1 }
+                scores: { satiety: 0, warmth: -1, stimulation: 3, comfort: -1, social: 0 }
             }
         ]
     },
+    // Q4: ドットの配置 - 社交性・まとまり
     {
         hint: "直感で選んで",
         options: [
-            { 
+            {
+                // 密集: 賑やか・共有・一体感
                 svg: `<svg viewBox="0 0 60 60"><circle cx="25" cy="25" r="4" class="filled"/><circle cx="35" cy="25" r="4" class="filled"/><circle cx="25" cy="35" r="4" class="filled"/><circle cx="35" cy="35" r="4" class="filled"/><circle cx="30" cy="30" r="4" class="filled"/></svg>`,
-                scores: { energy: -1, fresh: -1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 1 }
+                scores: { satiety: 1, warmth: 2, stimulation: 0, comfort: 1, social: 3 }
             },
-            { 
+            {
+                // 散らばり: 個人・自由・冒険
                 svg: `<svg viewBox="0 0 60 60"><circle cx="10" cy="15" r="3" class="filled"/><circle cx="50" cy="45" r="3" class="filled"/><circle cx="25" cy="50" r="3" class="filled"/><circle cx="45" cy="12" r="3" class="filled"/></svg>`,
-                scores: { energy: 1, fresh: 1, warm: -1, social: -2, comfort: 0, spicy: 1, rich: -1 }
+                scores: { satiety: -1, warmth: -1, stimulation: 2, comfort: -1, social: -3 }
             },
-            { 
+            {
+                // 一列: 秩序・バランス・安定
                 svg: `<svg viewBox="0 0 60 60"><circle cx="15" cy="30" r="4" class="filled"/><circle cx="30" cy="30" r="4" class="filled"/><circle cx="45" cy="30" r="4" class="filled"/></svg>`,
-                scores: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 2, spicy: -1, rich: 0 }
+                scores: { satiety: 0, warmth: 0, stimulation: -1, comfort: 3, social: 0 }
             },
-            { 
+            {
+                // ランダム多め: 多様性・刺激・賑やか
                 svg: `<svg viewBox="0 0 60 60"><circle cx="12" cy="20" r="3" class="filled"/><circle cx="28" cy="12" r="3" class="filled"/><circle cx="48" cy="25" r="3" class="filled"/><circle cx="20" cy="42" r="3" class="filled"/><circle cx="40" cy="48" r="3" class="filled"/><circle cx="35" cy="32" r="3" class="filled"/></svg>`,
-                scores: { energy: 1, fresh: 0, warm: 0, social: 1, comfort: -1, spicy: 2, rich: 0 }
+                scores: { satiety: 0, warmth: 0, stimulation: 3, comfort: -2, social: 1 }
             }
         ]
     },
-    {
-        hint: "直感で選んで",
-        options: [
-            { 
-                svg: `<svg viewBox="0 0 60 60"><line x1="30" y1="50" x2="30" y2="15" stroke-width="2"/><polyline points="20,25 30,12 40,25" stroke-width="2"/></svg>`,
-                scores: { energy: 2, fresh: 1, warm: -1, social: 1, comfort: -1, spicy: 1, rich: -1 }
-            },
-            { 
-                svg: `<svg viewBox="0 0 60 60"><line x1="30" y1="10" x2="30" y2="45" stroke-width="2"/><polyline points="20,35 30,48 40,35" stroke-width="2"/></svg>`,
-                scores: { energy: -2, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: -1, rich: 2 }
-            },
-            { 
-                svg: `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="18" stroke-width="2"/><path d="M30,12 L34,20 L30,18 L26,20 Z" class="filled"/></svg>`,
-                scores: { energy: 0, fresh: 0, warm: 0, social: 2, comfort: 0, spicy: 0, rich: 0 }
-            },
-            { 
-                svg: `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="8" class="filled"/></svg>`,
-                scores: { energy: -1, fresh: 0, warm: 1, social: -1, comfort: 2, spicy: -1, rich: 1 }
-            }
-        ]
-    },
+    // Q5: 方向性 - エネルギーの向き
     {
         hint: "直感で選んで",
         options: [
             {
+                // 上向き矢印: 活性化・上昇・軽さ
+                svg: `<svg viewBox="0 0 60 60"><line x1="30" y1="50" x2="30" y2="15" stroke-width="2"/><polyline points="20,25 30,10 40,25" stroke-width="2"/></svg>`,
+                scores: { satiety: -2, warmth: -1, stimulation: 2, comfort: -1, social: 0 }
+            },
+            {
+                // 下向き矢印: 落ち着き・グラウンディング・満足
+                svg: `<svg viewBox="0 0 60 60"><line x1="30" y1="10" x2="30" y2="45" stroke-width="2"/><polyline points="20,35 30,50 40,35" stroke-width="2"/></svg>`,
+                scores: { satiety: 3, warmth: 2, stimulation: -2, comfort: 2, social: 0 }
+            },
+            {
+                // 円+中心点: 集中・一体・社交
+                svg: `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="18" stroke-width="2"/><circle cx="30" cy="30" r="4" class="filled"/></svg>`,
+                scores: { satiety: 0, warmth: 1, stimulation: 0, comfort: 1, social: 2 }
+            },
+            {
+                // 塗りつぶし円: 満足・充足・完結
+                svg: `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="12" class="filled"/></svg>`,
+                scores: { satiety: 2, warmth: 1, stimulation: -1, comfort: 3, social: -1 }
+            }
+        ]
+    },
+    // Q6: 塗りのパターン - 満たされ度・完成度
+    {
+        hint: "直感で選んで",
+        options: [
+            {
+                // 塗りつぶし四角: 完全・充足・ガッツリ
                 svg: `<svg viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" stroke-width="2" class="filled"/></svg>`,
-                scores: { energy: -2, fresh: -2, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 }
+                scores: { satiety: 3, warmth: 2, stimulation: -1, comfort: 2, social: 0 }
             },
             {
-                svg: `<svg viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" stroke-width="2"/><circle cx="30" cy="30" r="4" stroke-width="2"/></svg>`,
-                scores: { energy: 2, fresh: 2, warm: -1, social: 0, comfort: -1, spicy: 0, rich: -2 }
+                // 枠のみ: 軽さ・余白・ヘルシー
+                svg: `<svg viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" stroke-width="2"/></svg>`,
+                scores: { satiety: -2, warmth: 0, stimulation: 0, comfort: 1, social: 0 }
             },
             {
+                // 半分塗り: バランス・中庸・適度
                 svg: `<svg viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" stroke-width="2"/><rect x="10" y="30" width="40" height="20" class="filled"/></svg>`,
-                scores: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 0 }
+                scores: { satiety: 1, warmth: 1, stimulation: 0, comfort: 1, social: 0 }
             },
             {
+                // グラデーション: 変化・多様・刺激
                 svg: `<svg viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" stroke-width="2"/><line x1="10" y1="42" x2="50" y2="42" stroke-width="6"/><line x1="10" y1="34" x2="50" y2="34" stroke-width="4"/><line x1="10" y1="26" x2="50" y2="26" stroke-width="2"/><line x1="10" y1="18" x2="50" y2="18" stroke-width="1"/></svg>`,
-                scores: { energy: 0, fresh: 1, warm: 1, social: 1, comfort: 0, spicy: 1, rich: 0 }
+                scores: { satiety: 0, warmth: 0, stimulation: 2, comfort: 0, social: 2 }
             }
         ]
     }
 ];
 
 // ============================================
-// 食べ物データベース（350種類）
+// 食べ物データベース（心理学的5軸プロファイル）
+// satiety: 満腹度 (-3軽め〜+3ガッツリ)
+// warmth: 温度 (-3冷たい〜+3温かい)
+// stimulation: 刺激 (-3マイルド〜+3スパイシー/刺激的)
+// comfort: 安心感 (-3冒険的〜+3定番・安心)
+// social: 社交性 (-3一人向け〜+3シェア向け)
 // ============================================
 
 const foods = [
-    // ===== ラーメン系 (20種類) =====
-    { name: "味噌ラーメン", profile: { energy: -2, fresh: -2, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "醤油ラーメン", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "塩ラーメン", profile: { energy: -1, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "豚骨ラーメン", profile: { energy: -2, fresh: -2, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "味噌バターラーメン", profile: { energy: -2, fresh: -2, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "バターコーンラーメン", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "チャーシューメン", profile: { energy: -2, fresh: -2, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "ネギラーメン", profile: { energy: -1, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "野菜ラーメン", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "担々麺", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 1, spicy: 2, rich: 1 } },
-    { name: "つけ麺", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "油そば", profile: { energy: -1, fresh: -1, warm: 0, social: 0, comfort: 0, spicy: 0, rich: 2 } },
-    { name: "台湾ラーメン", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 0, spicy: 2, rich: 1 } },
-    { name: "辛味噌ラーメン", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 1, spicy: 2, rich: 2 } },
-    { name: "煮干しラーメン", profile: { energy: -1, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "鶏白湯ラーメン", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "ワンタンメン", profile: { energy: -1, fresh: 0, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "タンメン", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "サンマーメン", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ちゃんぽん", profile: { energy: -1, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 1 } },
+    // ===== ガッツリ温かい定番 (高satiety, 高warmth, 高comfort) =====
+    { name: "味噌ラーメン", profile: { satiety: 3, warmth: 3, stimulation: 0, comfort: 3, social: 0 } },
+    { name: "豚骨ラーメン", profile: { satiety: 3, warmth: 3, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "カツカレー", profile: { satiety: 3, warmth: 3, stimulation: 1, comfort: 3, social: 0 } },
+    { name: "ビーフカレー", profile: { satiety: 2, warmth: 3, stimulation: 1, comfort: 3, social: 0 } },
+    { name: "カツ丼", profile: { satiety: 3, warmth: 2, stimulation: 0, comfort: 3, social: -1 } },
+    { name: "牛丼", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 3, social: -1 } },
+    { name: "親子丼", profile: { satiety: 2, warmth: 2, stimulation: -1, comfort: 3, social: -1 } },
+    { name: "天丼", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "鍋焼きうどん", profile: { satiety: 2, warmth: 3, stimulation: -1, comfort: 3, social: 0 } },
+    { name: "肉うどん", profile: { satiety: 2, warmth: 3, stimulation: 0, comfort: 3, social: 0 } },
+    { name: "すき焼き", profile: { satiety: 3, warmth: 3, stimulation: 0, comfort: 2, social: 3 } },
+    { name: "しゃぶしゃぶ", profile: { satiety: 2, warmth: 3, stimulation: 0, comfort: 2, social: 3 } },
+    { name: "もつ鍋", profile: { satiety: 2, warmth: 3, stimulation: 1, comfort: 1, social: 3 } },
+    { name: "キムチ鍋", profile: { satiety: 2, warmth: 3, stimulation: 2, comfort: 1, social: 3 } },
+    { name: "おでん", profile: { satiety: 1, warmth: 3, stimulation: -2, comfort: 3, social: 1 } },
 
-    // ===== うどん系 (15種類) =====
-    { name: "かけうどん", profile: { energy: 1, fresh: 1, warm: 2, social: -1, comfort: 2, spicy: -1, rich: -1 } },
-    { name: "きつねうどん", profile: { energy: 0, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "たぬきうどん", profile: { energy: 0, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "肉うどん", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "天ぷらうどん", profile: { energy: -1, fresh: 0, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "カレーうどん", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 1, rich: 1 } },
-    { name: "釜揚げうどん", profile: { energy: 0, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "ざるうどん", profile: { energy: 1, fresh: 1, warm: -1, social: -1, comfort: 1, spicy: -1, rich: -1 } },
-    { name: "鍋焼きうどん", profile: { energy: -1, fresh: -1, warm: 2, social: -1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "月見うどん", profile: { energy: 0, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "わかめうどん", profile: { energy: 1, fresh: 1, warm: 2, social: -1, comfort: 1, spicy: -1, rich: -1 } },
-    { name: "山菜うどん", profile: { energy: 1, fresh: 1, warm: 2, social: -1, comfort: 1, spicy: -1, rich: -1 } },
-    { name: "かき揚げうどん", profile: { energy: -1, fresh: 0, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "とろろうどん", profile: { energy: 0, fresh: 1, warm: 1, social: -1, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "明太うどん", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 1, rich: 1 } },
+    // ===== 刺激的な料理 (高stimulation) =====
+    { name: "担々麺", profile: { satiety: 2, warmth: 3, stimulation: 3, comfort: 1, social: 0 } },
+    { name: "麻婆豆腐", profile: { satiety: 1, warmth: 3, stimulation: 3, comfort: 1, social: 1 } },
+    { name: "台湾ラーメン", profile: { satiety: 2, warmth: 3, stimulation: 3, comfort: 0, social: 0 } },
+    { name: "グリーンカレー", profile: { satiety: 2, warmth: 3, stimulation: 3, comfort: 0, social: 0 } },
+    { name: "トムヤムクン", profile: { satiety: 1, warmth: 3, stimulation: 3, comfort: -1, social: 1 } },
+    { name: "エビチリ", profile: { satiety: 1, warmth: 2, stimulation: 2, comfort: 1, social: 2 } },
+    { name: "回鍋肉", profile: { satiety: 2, warmth: 2, stimulation: 2, comfort: 1, social: 1 } },
+    { name: "火鍋", profile: { satiety: 2, warmth: 3, stimulation: 3, comfort: 0, social: 3 } },
+    { name: "激辛ラーメン", profile: { satiety: 2, warmth: 3, stimulation: 3, comfort: -1, social: 0 } },
+    { name: "ペペロンチーノ", profile: { satiety: 1, warmth: 2, stimulation: 2, comfort: 1, social: 0 } },
 
-    // ===== そば系 (12種類) =====
-    { name: "ざるそば", profile: { energy: 1, fresh: 2, warm: -1, social: -1, comfort: 1, spicy: -1, rich: -1 } },
-    { name: "かけそば", profile: { energy: 1, fresh: 1, warm: 1, social: -1, comfort: 1, spicy: -1, rich: -1 } },
-    { name: "天ぷらそば", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "とろろそば", profile: { energy: 0, fresh: 1, warm: 0, social: -1, comfort: 1, spicy: -1, rich: 0 } },
-    { name: "月見そば", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 1, spicy: -1, rich: 0 } },
-    { name: "鴨南蛮そば", profile: { energy: -1, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "にしんそば", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 1, spicy: -1, rich: 0 } },
-    { name: "山菜そば", profile: { energy: 1, fresh: 1, warm: 1, social: -1, comfort: 1, spicy: -1, rich: -1 } },
-    { name: "わかめそば", profile: { energy: 1, fresh: 1, warm: 1, social: -1, comfort: 1, spicy: -1, rich: -1 } },
-    { name: "たぬきそば", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 1, spicy: -1, rich: 0 } },
-    { name: "きつねそば", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 1, spicy: -1, rich: 0 } },
-    { name: "おろしそば", profile: { energy: 1, fresh: 2, warm: -1, social: -1, comfort: 0, spicy: 0, rich: -1 } },
+    // ===== さっぱり軽め (低satiety, マイルド) =====
+    { name: "ざるそば", profile: { satiety: -1, warmth: -2, stimulation: -2, comfort: 3, social: -1 } },
+    { name: "ざるうどん", profile: { satiety: 0, warmth: -2, stimulation: -2, comfort: 3, social: -1 } },
+    { name: "冷やし中華", profile: { satiety: 0, warmth: -3, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "そうめん", profile: { satiety: -1, warmth: -3, stimulation: -2, comfort: 3, social: 0 } },
+    { name: "サラダうどん", profile: { satiety: 0, warmth: -1, stimulation: -1, comfort: 1, social: 0 } },
+    { name: "冷しゃぶサラダ", profile: { satiety: 0, warmth: -2, stimulation: -1, comfort: 1, social: 0 } },
+    { name: "シーザーサラダ", profile: { satiety: -1, warmth: -1, stimulation: -1, comfort: 1, social: 1 } },
+    { name: "ポキ丼", profile: { satiety: 0, warmth: -1, stimulation: 0, comfort: 0, social: 0 } },
+    { name: "アサイーボウル", profile: { satiety: -1, warmth: -2, stimulation: 0, comfort: -1, social: 0 } },
+    { name: "スムージー", profile: { satiety: -2, warmth: -3, stimulation: 0, comfort: 0, social: 0 } },
 
-    // ===== カレー系 (15種類) =====
-    { name: "ビーフカレー", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 1, rich: 2 } },
-    { name: "チキンカレー", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 1, rich: 1 } },
-    { name: "ポークカレー", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 1, rich: 1 } },
-    { name: "カツカレー", profile: { energy: -2, fresh: -2, warm: 2, social: 0, comfort: 2, spicy: 1, rich: 2 } },
-    { name: "エビカレー", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "野菜カレー", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 1, rich: 0 } },
-    { name: "キーマカレー", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 1, spicy: 2, rich: 1 } },
-    { name: "ドライカレー", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "スープカレー", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 1, rich: 0 } },
-    { name: "グリーンカレー", profile: { energy: 0, fresh: 0, warm: 2, social: 1, comfort: 0, spicy: 2, rich: 1 } },
-    { name: "バターチキンカレー", profile: { energy: -1, fresh: -1, warm: 2, social: 1, comfort: 1, spicy: 1, rich: 2 } },
-    { name: "シーフードカレー", profile: { energy: 0, fresh: 0, warm: 2, social: 1, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "ほうれん草カレー", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "豆カレー", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 1, rich: 0 } },
-    { name: "チーズカレー", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 1, rich: 2 } },
+    // ===== 寿司・海鮮 (さっぱり〜中程度) =====
+    { name: "握り寿司", profile: { satiety: 1, warmth: -1, stimulation: 0, comfort: 2, social: 2 } },
+    { name: "海鮮丼", profile: { satiety: 1, warmth: -1, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "サーモン丼", profile: { satiety: 1, warmth: -1, stimulation: -1, comfort: 2, social: 0 } },
+    { name: "まぐろ丼", profile: { satiety: 1, warmth: -1, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "ネギトロ丼", profile: { satiety: 1, warmth: -1, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "ちらし寿司", profile: { satiety: 1, warmth: -1, stimulation: 0, comfort: 2, social: 1 } },
+    { name: "刺身定食", profile: { satiety: 1, warmth: -1, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "うな丼", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
 
-    // ===== パスタ系 (20種類) =====
-    { name: "カルボナーラ", profile: { energy: -1, fresh: -2, warm: 1, social: 1, comfort: 2, spicy: -1, rich: 2 } },
-    { name: "ペペロンチーノ", profile: { energy: 1, fresh: 1, warm: 1, social: 0, comfort: 0, spicy: 1, rich: -1 } },
-    { name: "ボンゴレビアンコ", profile: { energy: 0, fresh: 1, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ボンゴレロッソ", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "ミートソース", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "ナポリタン", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "たらこパスタ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "明太子パスタ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "和風きのこパスタ", profile: { energy: 0, fresh: 1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "ペスカトーレ", profile: { energy: 0, fresh: 1, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "ボロネーゼ", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "アラビアータ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 0, spicy: 2, rich: 0 } },
-    { name: "ジェノベーゼ", profile: { energy: 0, fresh: 1, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "クリームパスタ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: -1, rich: 2 } },
-    { name: "トマトパスタ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "海老クリームパスタ", profile: { energy: -1, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "アマトリチャーナ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "プッタネスカ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 0, spicy: 1, rich: 0 } },
-    { name: "カチョエペペ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "ラザニア", profile: { energy: -1, fresh: -2, warm: 2, social: 1, comfort: 2, spicy: 0, rich: 2 } },
+    // ===== パスタ系 (バリエーション豊か) =====
+    { name: "カルボナーラ", profile: { satiety: 2, warmth: 2, stimulation: -1, comfort: 2, social: 0 } },
+    { name: "ミートソース", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 3, social: 0 } },
+    { name: "ナポリタン", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 3, social: 0 } },
+    { name: "ボンゴレビアンコ", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 1, social: 0 } },
+    { name: "ジェノベーゼ", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 1, social: 0 } },
+    { name: "たらこパスタ", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "明太子パスタ", profile: { satiety: 1, warmth: 2, stimulation: 1, comfort: 2, social: 0 } },
+    { name: "アラビアータ", profile: { satiety: 1, warmth: 2, stimulation: 2, comfort: 1, social: 0 } },
+    { name: "ラザニア", profile: { satiety: 3, warmth: 3, stimulation: 0, comfort: 2, social: 1 } },
 
-    // ===== 丼もの (20種類) =====
-    { name: "親子丼", profile: { energy: -1, fresh: -1, warm: 1, social: -1, comfort: 2, spicy: -1, rich: 1 } },
-    { name: "カツ丼", profile: { energy: -2, fresh: -1, warm: 1, social: -1, comfort: 2, spicy: -1, rich: 2 } },
-    { name: "牛丼", profile: { energy: -2, fresh: -1, warm: 1, social: -1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "豚丼", profile: { energy: -2, fresh: -1, warm: 1, social: -1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "天丼", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "海鮮丼", profile: { energy: 0, fresh: 2, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "ネギトロ丼", profile: { energy: 0, fresh: 2, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "うな丼", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "中華丼", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "麻婆丼", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 1, spicy: 2, rich: 1 } },
-    { name: "そぼろ丼", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "焼き鳥丼", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ステーキ丼", profile: { energy: -2, fresh: -1, warm: 1, social: 0, comfort: 0, spicy: 0, rich: 2 } },
-    { name: "ロコモコ丼", profile: { energy: -1, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "チャーシュー丼", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "サーモン丼", profile: { energy: 0, fresh: 2, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "まぐろ丼", profile: { energy: 0, fresh: 2, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "しらす丼", profile: { energy: 1, fresh: 2, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "いくら丼", profile: { energy: 0, fresh: 2, warm: -1, social: 1, comfort: 0, spicy: 0, rich: 2 } },
-    { name: "三色丼", profile: { energy: 0, fresh: 1, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 1 } },
+    // ===== 中華・アジアン (シェア向け多め) =====
+    { name: "餃子", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 2, social: 3 } },
+    { name: "焼き餃子", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 2, social: 3 } },
+    { name: "酢豚", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 1, social: 2 } },
+    { name: "青椒肉絲", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 1, social: 2 } },
+    { name: "チャーハン", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "天津飯", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "中華丼", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "春巻き", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 1, social: 2 } },
+    { name: "小籠包", profile: { satiety: 1, warmth: 3, stimulation: 0, comfort: 1, social: 2 } },
+    { name: "フォー", profile: { satiety: 1, warmth: 3, stimulation: 0, comfort: 0, social: 0 } },
+    { name: "パッタイ", profile: { satiety: 1, warmth: 1, stimulation: 1, comfort: 0, social: 0 } },
+    { name: "ガパオライス", profile: { satiety: 2, warmth: 2, stimulation: 2, comfort: 0, social: 0 } },
+    { name: "カオマンガイ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 0, social: 0 } },
+    { name: "ビビンバ", profile: { satiety: 2, warmth: 2, stimulation: 1, comfort: 1, social: 0 } },
+    { name: "サムギョプサル", profile: { satiety: 2, warmth: 2, stimulation: 1, comfort: 0, social: 3 } },
 
-    // ===== 寿司系 (15種類) =====
-    { name: "握り寿司", profile: { energy: 1, fresh: 2, warm: -1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "ちらし寿司", profile: { energy: 0, fresh: 2, warm: -1, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "手巻き寿司", profile: { energy: 0, fresh: 2, warm: -1, social: 2, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "押し寿司", profile: { energy: 0, fresh: 1, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "巻き寿司", profile: { energy: 0, fresh: 1, warm: -1, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "いなり寿司", profile: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "鉄火巻き", profile: { energy: 0, fresh: 2, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "サーモン寿司", profile: { energy: 0, fresh: 2, warm: -1, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "まぐろ寿司", profile: { energy: 0, fresh: 2, warm: -1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "えび寿司", profile: { energy: 0, fresh: 1, warm: -1, social: 1, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "いか寿司", profile: { energy: 0, fresh: 1, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "たこ寿司", profile: { energy: 0, fresh: 1, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ネギトロ巻き", profile: { energy: 0, fresh: 2, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "サラダ巻き", profile: { energy: 1, fresh: 1, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "穴子寿司", profile: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 1 } },
+    // ===== 洋食定番 (高comfort) =====
+    { name: "ハンバーグ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 3, social: 0 } },
+    { name: "オムライス", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 3, social: 0 } },
+    { name: "ドリア", profile: { satiety: 2, warmth: 3, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "グラタン", profile: { satiety: 2, warmth: 3, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "ビーフシチュー", profile: { satiety: 2, warmth: 3, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "クリームシチュー", profile: { satiety: 2, warmth: 3, stimulation: -1, comfort: 3, social: 1 } },
+    { name: "コロッケ", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 3, social: 0 } },
+    { name: "エビフライ", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "とんかつ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "チキンカツ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "唐揚げ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 3, social: 1 } },
+    { name: "フライドチキン", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 2 } },
 
-    // ===== 中華系 (25種類) =====
-    { name: "餃子", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "焼き餃子", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "水餃子", profile: { energy: 0, fresh: 0, warm: 2, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "麻婆豆腐", profile: { energy: -1, fresh: -1, warm: 2, social: 1, comfort: 1, spicy: 2, rich: 1 } },
-    { name: "エビチリ", profile: { energy: 0, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 1, rich: 1 } },
-    { name: "回鍋肉", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "青椒肉絲", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "酢豚", profile: { energy: 0, fresh: 0, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "八宝菜", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "天津飯", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "チャーハン", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "あんかけチャーハン", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "キムチチャーハン", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 2, rich: 1 } },
-    { name: "エビチャーハン", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "高菜チャーハン", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "春巻き", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "シュウマイ", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "小籠包", profile: { energy: 0, fresh: 0, warm: 2, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "油淋鶏", profile: { energy: -1, fresh: 0, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "棒棒鶏", profile: { energy: 0, fresh: 1, warm: -1, social: 1, comfort: 0, spicy: 1, rich: 0 } },
-    { name: "エビマヨ", profile: { energy: 0, fresh: 0, warm: 0, social: 2, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "豚キムチ", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 1, spicy: 2, rich: 1 } },
-    { name: "レバニラ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "焼きビーフン", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "皿うどん", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
+    // ===== ハンバーガー・ピザ (カジュアル・シェア) =====
+    { name: "チーズバーガー", profile: { satiety: 2, warmth: 1, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "ダブルチーズバーガー", profile: { satiety: 3, warmth: 1, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "ベーコンバーガー", profile: { satiety: 3, warmth: 1, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "テリヤキバーガー", profile: { satiety: 2, warmth: 1, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "マルゲリータピザ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 3 } },
+    { name: "ペパロニピザ", profile: { satiety: 2, warmth: 2, stimulation: 1, comfort: 2, social: 3 } },
+    { name: "クアトロフォルマッジ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 1, social: 2 } },
+    { name: "シーフードピザ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 1, social: 3 } },
 
-    // ===== 洋食系 (25種類) =====
-    { name: "ハンバーグ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "チーズハンバーグ", profile: { energy: -1, fresh: -2, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "和風ハンバーグ", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "デミグラスハンバーグ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "煮込みハンバーグ", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "おろしハンバーグ", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ステーキ", profile: { energy: -2, fresh: -1, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 2 } },
-    { name: "サーロインステーキ", profile: { energy: -2, fresh: -1, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 2 } },
-    { name: "ヒレステーキ", profile: { energy: -1, fresh: 0, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "オムライス", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "チキンオムライス", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "デミグラスオムライス", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "ふわとろオムライス", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "グラタン", profile: { energy: -1, fresh: -2, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "マカロニグラタン", profile: { energy: -1, fresh: -2, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "ドリア", profile: { energy: -1, fresh: -2, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "シーフードドリア", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "ビーフシチュー", profile: { energy: -1, fresh: -1, warm: 2, social: 1, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "クリームシチュー", profile: { energy: -1, fresh: -1, warm: 2, social: 1, comfort: 2, spicy: -1, rich: 2 } },
-    { name: "ハヤシライス", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "ポークソテー", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "チキンソテー", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ローストビーフ", profile: { energy: -1, fresh: 0, warm: 0, social: 1, comfort: 0, spicy: 0, rich: 2 } },
-    { name: "ローストチキン", profile: { energy: -1, fresh: 0, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "オムレツ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 2, spicy: -1, rich: 1 } },
+    // ===== 和食定番 (高comfort) =====
+    { name: "焼き魚定食", profile: { satiety: 1, warmth: 2, stimulation: -1, comfort: 3, social: -1 } },
+    { name: "生姜焼き定食", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 3, social: -1 } },
+    { name: "肉じゃが", profile: { satiety: 2, warmth: 2, stimulation: -1, comfort: 3, social: 1 } },
+    { name: "味噌汁", profile: { satiety: 0, warmth: 3, stimulation: -2, comfort: 3, social: 0 } },
+    { name: "豚汁", profile: { satiety: 1, warmth: 3, stimulation: -1, comfort: 3, social: 0 } },
+    { name: "けんちん汁", profile: { satiety: 1, warmth: 3, stimulation: -2, comfort: 3, social: 0 } },
+    { name: "お茶漬け", profile: { satiety: 0, warmth: 2, stimulation: -2, comfort: 3, social: -2 } },
+    { name: "おにぎり", profile: { satiety: 1, warmth: 0, stimulation: -2, comfort: 3, social: -1 } },
+    { name: "卵かけご飯", profile: { satiety: 1, warmth: 1, stimulation: -2, comfort: 3, social: -2 } },
+    { name: "納豆ご飯", profile: { satiety: 1, warmth: 1, stimulation: -1, comfort: 3, social: -2 } },
+    { name: "焼き鳥", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 2, social: 3 } },
+    { name: "焼き鳥丼", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
 
-    // ===== 和食系 (30種類) =====
-    { name: "焼き魚定食", profile: { energy: 0, fresh: 1, warm: 1, social: -1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "鮭の塩焼き", profile: { energy: 0, fresh: 1, warm: 1, social: -1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "さばの塩焼き", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "さんまの塩焼き", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ぶりの照り焼き", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "さばの味噌煮", profile: { energy: -1, fresh: -1, warm: 1, social: -1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "煮魚", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "刺身盛り合わせ", profile: { energy: 1, fresh: 2, warm: -1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "天ぷら", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "天ぷら盛り合わせ", profile: { energy: -1, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "とんかつ", profile: { energy: -2, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "ロースカツ", profile: { energy: -2, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "ヒレカツ", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "味噌カツ", profile: { energy: -2, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "チキンカツ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "唐揚げ", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "塩唐揚げ", profile: { energy: -1, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "にんにく唐揚げ", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "竜田揚げ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "チキン南蛮", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "生姜焼き", profile: { energy: -1, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "肉じゃが", profile: { energy: -1, fresh: -1, warm: 2, social: -1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "筑前煮", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "おでん", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "茶碗蒸し", profile: { energy: 1, fresh: 0, warm: 1, social: 0, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "卵焼き", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "焼き鳥", profile: { energy: -1, fresh: 0, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "豚汁", profile: { energy: 0, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "けんちん汁", profile: { energy: 0, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "味噌汁", profile: { energy: 1, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: 0, rich: 0 } },
+    // ===== 焼肉・ステーキ (ガッツリ・社交的) =====
+    { name: "焼肉", profile: { satiety: 3, warmth: 2, stimulation: 1, comfort: 1, social: 3 } },
+    { name: "カルビ", profile: { satiety: 3, warmth: 2, stimulation: 0, comfort: 1, social: 2 } },
+    { name: "ハラミ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 1, social: 2 } },
+    { name: "タン塩", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 1, social: 2 } },
+    { name: "ステーキ", profile: { satiety: 3, warmth: 2, stimulation: 0, comfort: 1, social: 0 } },
+    { name: "ローストビーフ丼", profile: { satiety: 2, warmth: 0, stimulation: 0, comfort: 1, social: 0 } },
+    { name: "ハンバーグステーキ", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 0 } },
 
-    // ===== 鍋系 (15種類) =====
-    { name: "すき焼き", profile: { energy: -1, fresh: 0, warm: 2, social: 2, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "しゃぶしゃぶ", profile: { energy: 0, fresh: 1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "豚しゃぶ", profile: { energy: 0, fresh: 1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "牛しゃぶ", profile: { energy: -1, fresh: 1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "キムチ鍋", profile: { energy: -1, fresh: 0, warm: 2, social: 2, comfort: 1, spicy: 2, rich: 1 } },
-    { name: "もつ鍋", profile: { energy: -1, fresh: -1, warm: 2, social: 2, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "水炊き", profile: { energy: 0, fresh: 1, warm: 2, social: 2, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "寄せ鍋", profile: { energy: 0, fresh: 0, warm: 2, social: 2, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "ちゃんこ鍋", profile: { energy: -1, fresh: -1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "豆乳鍋", profile: { energy: 0, fresh: 0, warm: 2, social: 1, comfort: 2, spicy: -1, rich: 1 } },
-    { name: "トマト鍋", profile: { energy: 0, fresh: 0, warm: 2, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "カレー鍋", profile: { energy: -1, fresh: -1, warm: 2, social: 2, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "味噌鍋", profile: { energy: -1, fresh: -1, warm: 2, social: 1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "塩ちゃんこ", profile: { energy: 0, fresh: 0, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "鶏鍋", profile: { energy: 0, fresh: 0, warm: 2, social: 2, comfort: 2, spicy: 0, rich: 0 } },
+    // ===== 軽食・スナック =====
+    { name: "たこ焼き", profile: { satiety: 0, warmth: 2, stimulation: 0, comfort: 2, social: 2 } },
+    { name: "お好み焼き", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 2 } },
+    { name: "もんじゃ焼き", profile: { satiety: 1, warmth: 2, stimulation: 0, comfort: 1, social: 3 } },
+    { name: "焼きそば", profile: { satiety: 2, warmth: 2, stimulation: 0, comfort: 2, social: 1 } },
+    { name: "サンドイッチ", profile: { satiety: 0, warmth: 0, stimulation: -1, comfort: 2, social: 0 } },
+    { name: "ホットドッグ", profile: { satiety: 1, warmth: 1, stimulation: 0, comfort: 2, social: 0 } },
+    { name: "フライドポテト", profile: { satiety: 0, warmth: 2, stimulation: 0, comfort: 2, social: 2 } },
+    { name: "チキンナゲット", profile: { satiety: 0, warmth: 2, stimulation: 0, comfort: 2, social: 2 } },
+    { name: "肉まん", profile: { satiety: 1, warmth: 2, stimulation: -1, comfort: 2, social: 0 } },
+    { name: "カレーパン", profile: { satiety: 1, warmth: 2, stimulation: 1, comfort: 2, social: 0 } },
 
-    // ===== 焼肉系 (15種類) =====
-    { name: "カルビ", profile: { energy: -2, fresh: -1, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 2 } },
-    { name: "ロース", profile: { energy: -1, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "ハラミ", profile: { energy: -1, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "タン塩", profile: { energy: -1, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ホルモン", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "豚トロ", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 2 } },
-    { name: "鶏もも", profile: { energy: -1, fresh: 0, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "手羽先", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "砂肝", profile: { energy: 0, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "レバー", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "ミノ", profile: { energy: 0, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ハツ", profile: { energy: 0, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ジンギスカン", profile: { energy: -1, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "サムギョプサル", profile: { energy: -1, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 1, rich: 1 } },
-    { name: "プルコギ", profile: { energy: -1, fresh: 0, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
+    // ===== 冒険的・エスニック (低comfort, 高stimulation) =====
+    { name: "タコス", profile: { satiety: 1, warmth: 1, stimulation: 2, comfort: 0, social: 2 } },
+    { name: "ブリトー", profile: { satiety: 2, warmth: 1, stimulation: 1, comfort: 0, social: 0 } },
+    { name: "ナシゴレン", profile: { satiety: 2, warmth: 2, stimulation: 1, comfort: -1, social: 0 } },
+    { name: "ケバブ", profile: { satiety: 2, warmth: 2, stimulation: 1, comfort: 0, social: 0 } },
+    { name: "フムス", profile: { satiety: 0, warmth: 0, stimulation: 0, comfort: -1, social: 2 } },
+    { name: "ファラフェル", profile: { satiety: 1, warmth: 2, stimulation: 1, comfort: -1, social: 0 } },
+    { name: "バインミー", profile: { satiety: 1, warmth: 0, stimulation: 1, comfort: -1, social: 0 } },
 
-    // ===== ピザ系 (10種類) =====
-    { name: "マルゲリータ", profile: { energy: 0, fresh: 0, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "クワトロフォルマッジ", profile: { energy: 0, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "マリナーラ", profile: { energy: 1, fresh: 0, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ペパロニピザ", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "シーフードピザ", profile: { energy: 0, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "テリヤキチキンピザ", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ベーコンピザ", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "野菜ピザ", profile: { energy: 0, fresh: 0, warm: 1, social: 2, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ミックスピザ", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ハワイアンピザ", profile: { energy: 0, fresh: 0, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 0 } },
-
-    // ===== 粉もの (10種類) =====
-    { name: "お好み焼き", profile: { energy: -1, fresh: -1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "豚玉", profile: { energy: -1, fresh: -1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "イカ玉", profile: { energy: -1, fresh: 0, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "ミックス焼き", profile: { energy: -1, fresh: -1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "広島焼き", profile: { energy: -1, fresh: -1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "たこ焼き", profile: { energy: 0, fresh: -1, warm: 2, social: 2, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "焼きそば", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "ソース焼きそば", profile: { energy: -1, fresh: -1, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "塩焼きそば", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "もんじゃ焼き", profile: { energy: 0, fresh: -1, warm: 2, social: 2, comfort: 0, spicy: 0, rich: 0 } },
-
-    // ===== エスニック系 (20種類) =====
-    { name: "パッタイ", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 0, spicy: 1, rich: 0 } },
-    { name: "フォー", profile: { energy: 1, fresh: 1, warm: 1, social: 0, comfort: 0, spicy: 0, rich: -1 } },
-    { name: "ガパオライス", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 0, spicy: 2, rich: 0 } },
-    { name: "トムヤムクン", profile: { energy: 1, fresh: 1, warm: 2, social: 1, comfort: 0, spicy: 2, rich: 0 } },
-    { name: "生春巻き", profile: { energy: 1, fresh: 2, warm: -1, social: 1, comfort: 0, spicy: 0, rich: -1 } },
-    { name: "ビビンバ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 0, spicy: 1, rich: 0 } },
-    { name: "石焼ビビンバ", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "チヂミ", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "冷麺", profile: { energy: 1, fresh: 2, warm: -2, social: 0, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "タコス", profile: { energy: 0, fresh: 0, warm: 0, social: 2, comfort: 0, spicy: 1, rich: 0 } },
-    { name: "ブリトー", profile: { energy: -1, fresh: -1, warm: 0, social: 1, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "ナシゴレン", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 0, spicy: 1, rich: 0 } },
-    { name: "ミーゴレン", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 0, spicy: 1, rich: 0 } },
-    { name: "カオマンガイ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "ラクサ", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 0, spicy: 1, rich: 1 } },
-    { name: "バインミー", profile: { energy: 1, fresh: 1, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ケバブ", profile: { energy: -1, fresh: 0, warm: 0, social: 1, comfort: 0, spicy: 1, rich: 1 } },
-    { name: "レッドカレー", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 0, spicy: 2, rich: 1 } },
-    { name: "マッサマンカレー", profile: { energy: -1, fresh: -1, warm: 2, social: 0, comfort: 1, spicy: 1, rich: 2 } },
-    { name: "フォーガー", profile: { energy: 0, fresh: 1, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-
-    // ===== ハンバーガー系 (10種類) =====
-    { name: "ハンバーガー", profile: { energy: -1, fresh: -1, warm: 0, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "チーズバーガー", profile: { energy: -1, fresh: -1, warm: 0, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "てりやきバーガー", profile: { energy: -1, fresh: -1, warm: 0, social: 1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "フィッシュバーガー", profile: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "チキンバーガー", profile: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "アボカドバーガー", profile: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ベーコンバーガー", profile: { energy: -1, fresh: -1, warm: 0, social: 1, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "エッグバーガー", profile: { energy: -1, fresh: -1, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ダブルバーガー", profile: { energy: -2, fresh: -2, warm: 0, social: 1, comfort: 0, spicy: 0, rich: 2 } },
-    { name: "和風バーガー", profile: { energy: -1, fresh: 0, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-
-    // ===== 揚げ物系 (15種類) =====
-    { name: "フライドチキン", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "チキンナゲット", profile: { energy: 0, fresh: -1, warm: 0, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "エビフライ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "カキフライ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "アジフライ", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "イカフライ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "コロッケ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "クリームコロッケ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "メンチカツ", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 2 } },
-    { name: "串カツ", profile: { energy: -1, fresh: -1, warm: 1, social: 2, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ハムカツ", profile: { energy: 0, fresh: -1, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "かき揚げ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "野菜天ぷら", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "フライドポテト", profile: { energy: 0, fresh: -1, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "オニオンリング", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-
-    // ===== ご飯もの (15種類) =====
-    { name: "卵かけご飯", profile: { energy: 1, fresh: 0, warm: 0, social: -2, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "お茶漬け", profile: { energy: 1, fresh: 1, warm: 1, social: -2, comfort: 2, spicy: -1, rich: -1 } },
-    { name: "鮭茶漬け", profile: { energy: 1, fresh: 1, warm: 1, social: -2, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "梅茶漬け", profile: { energy: 1, fresh: 2, warm: 1, social: -2, comfort: 2, spicy: 0, rich: -1 } },
-    { name: "雑炊", profile: { energy: 0, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "おかゆ", profile: { energy: 1, fresh: 0, warm: 2, social: -2, comfort: 2, spicy: -1, rich: -1 } },
-    { name: "リゾット", profile: { energy: -1, fresh: -1, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "チーズリゾット", profile: { energy: -1, fresh: -2, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "トマトリゾット", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ピラフ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "エビピラフ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "焼きおにぎり", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "炊き込みご飯", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "五目ご飯", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "赤飯", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-
-    // ===== 軽食系 (20種類) =====
-    { name: "サンドイッチ", profile: { energy: 1, fresh: 1, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "カツサンド", profile: { energy: -1, fresh: -1, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "卵サンド", profile: { energy: 0, fresh: 0, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "ツナサンド", profile: { energy: 0, fresh: 0, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "BLTサンド", profile: { energy: 0, fresh: 0, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "おにぎり", profile: { energy: 1, fresh: 0, warm: 0, social: -1, comfort: 2, spicy: -1, rich: -1 } },
-    { name: "鮭おにぎり", profile: { energy: 1, fresh: 0, warm: 0, social: -1, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "ツナマヨおにぎり", profile: { energy: 0, fresh: 0, warm: 0, social: -1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "梅おにぎり", profile: { energy: 1, fresh: 1, warm: 0, social: -1, comfort: 2, spicy: 0, rich: -1 } },
-    { name: "昆布おにぎり", profile: { energy: 0, fresh: 0, warm: 0, social: -1, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "トースト", profile: { energy: 1, fresh: 0, warm: 1, social: -1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "フレンチトースト", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 2, spicy: -1, rich: 1 } },
-    { name: "ホットドッグ", profile: { energy: 0, fresh: 0, warm: 0, social: 1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "クロワッサン", profile: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "ベーグル", profile: { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "パニーニ", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 0, spicy: 0, rich: 1 } },
-    { name: "サラダ", profile: { energy: 2, fresh: 2, warm: -1, social: 0, comfort: -1, spicy: 0, rich: -2 } },
-    { name: "シーザーサラダ", profile: { energy: 1, fresh: 2, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ポテトサラダ", profile: { energy: 0, fresh: 0, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "マカロニサラダ", profile: { energy: 0, fresh: 0, warm: -1, social: 0, comfort: 1, spicy: 0, rich: 1 } },
-
-    // ===== スープ系 (10種類) =====
-    { name: "コーンスープ", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 2, spicy: -1, rich: 1 } },
-    { name: "ミネストローネ", profile: { energy: 0, fresh: 1, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "クラムチャウダー", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 2 } },
-    { name: "オニオンスープ", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "ポタージュ", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 2, spicy: -1, rich: 1 } },
-    { name: "トマトスープ", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "中華スープ", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "わかめスープ", profile: { energy: 1, fresh: 1, warm: 2, social: 0, comfort: 1, spicy: 0, rich: -1 } },
-    { name: "卵スープ", profile: { energy: 0, fresh: 0, warm: 2, social: 0, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "野菜スープ", profile: { energy: 1, fresh: 1, warm: 2, social: 0, comfort: 1, spicy: 0, rich: 0 } },
-
-    // ===== その他 (20種類) =====
-    { name: "肉まん", profile: { energy: -1, fresh: -1, warm: 2, social: -1, comfort: 2, spicy: 0, rich: 1 } },
-    { name: "あんまん", profile: { energy: 0, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: -2, rich: 1 } },
-    { name: "ピザまん", profile: { energy: 0, fresh: -1, warm: 2, social: -1, comfort: 1, spicy: 0, rich: 1 } },
-    { name: "カレーまん", profile: { energy: 0, fresh: -1, warm: 2, social: -1, comfort: 1, spicy: 1, rich: 1 } },
-    { name: "焼き芋", profile: { energy: 0, fresh: 0, warm: 2, social: -1, comfort: 2, spicy: -1, rich: 0 } },
-    { name: "枝豆", profile: { energy: 1, fresh: 0, warm: 0, social: 2, comfort: 0, spicy: 0, rich: -1 } },
-    { name: "冷奴", profile: { energy: 1, fresh: 1, warm: -1, social: 0, comfort: 1, spicy: 0, rich: -1 } },
-    { name: "揚げ出し豆腐", profile: { energy: 0, fresh: 0, warm: 1, social: 0, comfort: 2, spicy: 0, rich: 0 } },
-    { name: "焼きナス", profile: { energy: 0, fresh: 0, warm: 1, social: -1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "ほうれん草のおひたし", profile: { energy: 1, fresh: 1, warm: -1, social: -1, comfort: 1, spicy: 0, rich: -1 } },
-    { name: "きんぴらごぼう", profile: { energy: 0, fresh: 0, warm: 0, social: -1, comfort: 1, spicy: 0, rich: 0 } },
-    { name: "春雨サラダ", profile: { energy: 1, fresh: 1, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "ナムル", profile: { energy: 0, fresh: 0, warm: -1, social: 0, comfort: 0, spicy: 0, rich: 0 } },
-    { name: "キムチ", profile: { energy: 0, fresh: 0, warm: -1, social: 0, comfort: 0, spicy: 2, rich: 0 } },
-    { name: "パンケーキ", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 2, spicy: -2, rich: 1 } },
-    { name: "ワッフル", profile: { energy: 0, fresh: 0, warm: 1, social: 1, comfort: 1, spicy: -2, rich: 1 } },
-    { name: "クレープ", profile: { energy: 1, fresh: 0, warm: -1, social: 1, comfort: 1, spicy: -2, rich: 1 } },
-    { name: "アイスクリーム", profile: { energy: 1, fresh: 1, warm: -2, social: 0, comfort: 1, spicy: -2, rich: 1 } },
-    { name: "かき氷", profile: { energy: 2, fresh: 2, warm: -2, social: 0, comfort: 0, spicy: -2, rich: -1 } },
-    { name: "あんみつ", profile: { energy: 0, fresh: 0, warm: -1, social: 0, comfort: 2, spicy: -2, rich: 0 } }
+    // ===== 一人でじっくり (低social) =====
+    { name: "かけうどん", profile: { satiety: 0, warmth: 2, stimulation: -2, comfort: 3, social: -2 } },
+    { name: "きつねうどん", profile: { satiety: 1, warmth: 2, stimulation: -2, comfort: 3, social: -2 } },
+    { name: "かけそば", profile: { satiety: 0, warmth: 2, stimulation: -2, comfort: 3, social: -2 } },
+    { name: "月見そば", profile: { satiety: 1, warmth: 2, stimulation: -2, comfort: 3, social: -2 } },
+    { name: "塩ラーメン", profile: { satiety: 1, warmth: 3, stimulation: -1, comfort: 2, social: -1 } },
+    { name: "醤油ラーメン", profile: { satiety: 2, warmth: 3, stimulation: 0, comfort: 3, social: 0 } }
 ];
+
 
 // 状態管理
 let currentQuestion = 0;
 let answers = [];
-let totalScores = { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 0, spicy: 0, rich: 0 };
+let totalScores = { satiety: 0, warmth: 0, stimulation: 0, comfort: 0, social: 0 };
 let lastScores = null;
 let resultFood = null;
 
@@ -616,14 +467,15 @@ function showQuestion(index) {
 }
 
 function selectOption(index) {
+    playSelect();
     const opt = shuffledOptions[index];
-    
+
     Object.keys(opt.scores).forEach(key => {
         totalScores[key] += opt.scores[key];
     });
-    
+
     answers.push({ questionIndex: currentQuestion, optionIndex: index, scores: { ...opt.scores } });
-    
+
     currentQuestion++;
     if (currentQuestion < questions.length) {
         showQuestion(currentQuestion);
@@ -652,13 +504,15 @@ function showAnalyzing() {
 
 function applyTimeAdjustment() {
     const hour = new Date().getHours();
+    // 夜間（18:00-04:00）: 温かさ・安心感を求める傾向
     if (hour >= 18 || hour <= 4) {
-        totalScores.warm += 1;
+        totalScores.warmth += 1;
         totalScores.comfort += 0.5;
-        totalScores.rich += 0.5;
+        totalScores.satiety += 0.5;
+    // 朝（05:00-10:00）: 軽め・刺激を求める傾向
     } else if (hour >= 5 && hour <= 10) {
-        totalScores.fresh += 0.5;
-        totalScores.energy += 0.5;
+        totalScores.satiety -= 0.5;
+        totalScores.stimulation += 0.5;
     }
 }
 
@@ -691,8 +545,8 @@ function drawRadarChart(scores) {
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const labels = ['活力', 'さっぱり', '温かさ', '社交', '安心'];
-    const keys = ['energy', 'fresh', 'warm', 'social', 'comfort'];
+    const labels = ['満腹', '温かさ', '刺激', '安心', '社交'];
+    const keys = ['satiety', 'warmth', 'stimulation', 'comfort', 'social'];
     const n = 5;
     const step = (Math.PI * 2) / n;
     
@@ -746,6 +600,7 @@ function drawRadarChart(scores) {
 }
 
 function showResult() {
+    playResult();
     const result = calculateResult();
     lastScores = { ...totalScores };
     resultFood = result.first;
@@ -756,23 +611,25 @@ function showResult() {
     setTimeout(() => drawRadarChart(lastScores), 50);
 }
 
+const SITE_URL = 'https://wahteat.netlify.app/';
+
 function getShareText() {
-    return `What Eat? の結果→「${resultFood.name}」\n`;
+    return `今日食べるものは「${resultFood.name}」だったよ！\n\n今日食べたいもの、悩んでない？\nそんな時はこれ使ってみて\n`;
 }
 
 function shareX() {
     const text = encodeURIComponent(getShareText());
-    const url = encodeURIComponent(location.href);
+    const url = encodeURIComponent(SITE_URL);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
 }
 
 function shareLINE() {
-    const text = encodeURIComponent(getShareText() + location.href);
+    const text = encodeURIComponent(getShareText() + '\n' + SITE_URL);
     window.open(`https://line.me/R/msg/text/?${text}`, '_blank');
 }
 
 function copyResult() {
-    navigator.clipboard.writeText(getShareText() + location.href).then(() => {
+    navigator.clipboard.writeText(getShareText() + '\n' + SITE_URL).then(() => {
         const btn = document.getElementById('copy-result');
         btn.textContent = 'OK!';
         btn.classList.add('copied');
@@ -786,7 +643,7 @@ function copyResult() {
 function reset() {
     currentQuestion = 0;
     answers = [];
-    totalScores = { energy: 0, fresh: 0, warm: 0, social: 0, comfort: 0, spicy: 0, rich: 0 };
+    totalScores = { satiety: 0, warmth: 0, stimulation: 0, comfort: 0, social: 0 };
     lastScores = null;
     resultFood = null;
     showScreen('start');
@@ -794,11 +651,16 @@ function reset() {
 
 // イベント
 document.getElementById('start-btn').addEventListener('click', () => {
+    startAudio();
+    playSelect();
     showScreen('question');
     showQuestion(0);
 });
 document.getElementById('back-btn').addEventListener('click', goBack);
-document.getElementById('retry-btn').addEventListener('click', reset);
+document.getElementById('retry-btn').addEventListener('click', () => {
+    playSelect();
+    reset();
+});
 document.getElementById('share-x').addEventListener('click', shareX);
 document.getElementById('share-line').addEventListener('click', shareLINE);
 document.getElementById('copy-result').addEventListener('click', copyResult);
